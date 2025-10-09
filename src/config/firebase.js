@@ -1,19 +1,24 @@
 // src/config/firebase.js
-import { readFileSync } from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 import admin from "firebase-admin";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Make sure you have set FIREBASE_SERVICE_ACCOUNT as an environment variable
+// Example: process.env.FIREBASE_SERVICE_ACCOUNT = JSON.stringify(firebaseServiceAccountJson)
 
-const serviceAccountPath = path.join(__dirname, "firebaseServiceAccount.json");
-const serviceAccount = JSON.parse(readFileSync(serviceAccountPath, "utf8"));
+if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+  throw new Error(
+    "FIREBASE_SERVICE_ACCOUNT environment variable not set. Please add it in Render or your environment."
+  );
+}
 
+// Parse the service account JSON from environment variable
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+// Initialize Firebase Admin SDK
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+// Get Firestore instance
 const db = admin.firestore();
 
-export { db, admin };  // <-- named exports
+export { db, admin }; // named exports
