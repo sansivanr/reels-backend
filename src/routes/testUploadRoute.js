@@ -2,14 +2,19 @@ import express from "express";
 import multer from "multer";
 import s3 from "../config/s3Config.js";
 import { db } from "../config/firebase.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // POST /api/test-upload
-router.post("/", upload.single("video"), async (req, res) => {
+router.post("/", verifyToken, upload.single("video"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: "No video uploaded" });
+
+    // user details
+    const userId = req.user.userId;
+    const username = req.user.username;
 
     // 1️⃣ Upload to S3
     const key = `test-videos/${Date.now()}_${req.file.originalname || "upload.mp4"}`;
@@ -26,6 +31,7 @@ router.post("/", upload.single("video"), async (req, res) => {
     const doc = {
       filename: key,
       s3_url: uploaded.Location,
+      uploadedBy: { userId, username },
       createdAt: new Date().toISOString(),
     };
 
@@ -35,6 +41,7 @@ router.post("/", upload.single("video"), async (req, res) => {
     return res.json({
       message: "AWS + Firestore test successful",
       s3Url: uploaded.Location,
+      uploadedBy: username,
       docId: ref.id,
     });
 

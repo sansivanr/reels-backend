@@ -33,6 +33,7 @@ router.get("/", async (req, res) => {
         s3_url: data.s3_url,
         explicit: flagged,
         createdAt: data.createdAt,
+        uploadedBy: data.uploadedBy || { userId: "unknown", username: "unknown" },
       };
     });
 
