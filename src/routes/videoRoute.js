@@ -16,7 +16,7 @@ router.get("/", async (req, res) => {
       const data = doc.data();
       const frames = data.sightengine_result?.data?.frames || [];
 
-      // Simple explicit check across frames
+      // 🧠 Simple explicit content check
       const flagged = frames.some((f) =>
         (f.nudity?.raw ?? 0) > 0.5 ||
         (f.violence?.prob ?? 0) > 0.5 ||
@@ -28,12 +28,17 @@ router.get("/", async (req, res) => {
 
       return {
         id: doc.id,
+        s3_url: data.s3_url,
         title: data.title || "Untitled",
         description: data.description || "",
-        s3_url: data.s3_url,
         explicit: flagged,
         createdAt: data.createdAt,
-        uploadedBy: data.uploadedBy || { userId: "unknown", username: "unknown" },
+        likesCount: data.likesCount || 0, // ✅ Like count added
+        uploadedBy: {
+          userId: data.uploadedBy?.userId || "unknown",
+          username: data.uploadedBy?.username || "unknown",
+          profilePic: data.uploadedBy?.profilePic || null, // ✅ added profile pic
+        },
       };
     });
 

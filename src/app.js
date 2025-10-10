@@ -5,6 +5,8 @@ import videoRoute from "./routes/videoRoute.js";
 import testUploadRoute from "./routes/testUploadRoute.js"
 import register from "./routes/register.js"
 import signin from "./routes/signin.js"
+import profileView from "./routes/profileView.js"
+import likeCount from "./routes/likeCount.js"
 
 const app = express();
 app.use(cors());
@@ -14,6 +16,8 @@ app.use("/api/videos", videoRoute);
 app.use("/api/test-upload", testUploadRoute);
 app.use("/api/register", register);
 app.use("/api/signin", signin);
+app.use("/api/users", profileView);
+app.use("/api/videolike", likeCount);
 
 app.get("/", (req, res) => res.send("Server running ✅"));
 
