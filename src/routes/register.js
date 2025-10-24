@@ -2,8 +2,9 @@ import express from "express";
 import multer from "multer";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
-import s3 from "../config/s3Config.js"; // updated import
+import s3 from "../config/s3Config.js";
 import { db } from "../config/firebase.js";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -48,10 +49,17 @@ router.post("/", upload.single("profilePic"), async (req, res) => {
       createdAt: new Date().toISOString(),
     });
 
-    return res.json({
+    // Generate JWT token
+    const userData = { id: userRef.id, username, profileUrl };
+    const token = jwt.sign(userData, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    // Send response with user and token
+    return res.status(201).json({
       message: "User registered successfully",
-      user: { id: userRef.id, username, profileUrl },
+      user: userData,
+      token,
     });
+
   } catch (err) {
     console.error("Register error:", err.message || err);
     return res.status(500).json({ error: "Server error", details: err.message });
