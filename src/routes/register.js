@@ -57,7 +57,7 @@ router.post("/", upload.single("profilePic"), async (req, res) => {
     return res.status(201).json({
       message: "User registered successfully",
       user: userData,
-      token,
+      token: token,
     });
 
   } catch (err) {
