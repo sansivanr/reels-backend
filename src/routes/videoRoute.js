@@ -34,6 +34,7 @@ router.get("/", async (req, res) => {
         explicit: flagged,
         createdAt: data.createdAt,
         likesCount: data.likesCount || 0, // ✅ Like count added
+        likedBy: data.likedBy || [],
         uploadedBy: {
           userId: data.uploadedBy?.userId || "unknown",
           username: data.uploadedBy?.username || "unknown",
