@@ -7,6 +7,7 @@ import register from "./routes/register.js"
 import signin from "./routes/signin.js"
 import profileView from "./routes/profileView.js"
 import likeCount from "./routes/likeCount.js"
+import checkUsername from "./routes/checkUsername.js"
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,7 @@ app.use("/api/register", register);
 app.use("/api/signin", signin);
 app.use("/api/users", profileView);
 app.use("/api/videolike", likeCount);
+app.use("/api/check-username", checkUsername);
 
 app.get("/", (req, res) => res.send("Server running ✅"));
 
