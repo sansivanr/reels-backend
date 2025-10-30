@@ -40,6 +40,7 @@ router.get("/", async (req, res) => {
           username: data.uploadedBy?.username || "unknown",
           profilePic: data.uploadedBy?.profilePic || null, // ✅ added profile pic
         },
+        thumbnail_url: data.thumbnail_url || null,
       };
     });
 
