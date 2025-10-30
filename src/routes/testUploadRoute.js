@@ -9,49 +9,73 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 const FieldValue = admin.firestore.FieldValue;
 
-// POST /api/test-upload
-router.post("/", verifyToken, upload.single("video"), async (req, res) => {
-  try {
-    if (!req.file) return res.status(400).json({ error: "No video uploaded" });
+// ✅ Allow both video and optional thumbnail
+const uploadFields = upload.fields([
+  { name: "video", maxCount: 1 },
+  { name: "thumbnail", maxCount: 1 },
+]);
 
+// POST /api/test-upload
+router.post("/", verifyToken, uploadFields, async (req, res) => {
+  try {
+    const videoFile = req.files?.video?.[0];
+    if (!videoFile) return res.status(400).json({ error: "No video uploaded" });
+
+    const thumbFile = req.files?.thumbnail?.[0]; // optional
     const { title, description } = req.body;
     const userId = req.user.userId;
     const username = req.user.username;
 
     // ✅ Upload video to S3
-    const key = `test-videos/${Date.now()}_${req.file.originalname || "upload.mp4"}`;
-    const uploadParams = {
+    const videoKey = `test-videos/${Date.now()}_${videoFile.originalname || "upload.mp4"}`;
+    const videoParams = {
       Bucket: process.env.S3_BUCKET_NAME,
-      Key: key,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype || "video/mp4",
+      Key: videoKey,
+      Body: videoFile.buffer,
+      ContentType: videoFile.mimetype || "video/mp4",
     };
-    const uploaded = await s3.upload(uploadParams).promise();
+    const uploadedVideo = await s3.upload(videoParams).promise();
+
+    // ✅ Upload thumbnail (if provided)
+    let thumbnailUrl = null;
+    if (thumbFile) {
+      const thumbKey = `thumbnails/${Date.now()}_${thumbFile.originalname || "thumbnail.jpg"}`;
+      const thumbParams = {
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: thumbKey,
+        Body: thumbFile.buffer,
+        ContentType: thumbFile.mimetype || "image/jpeg",
+      };
+      const uploadedThumb = await s3.upload(thumbParams).promise();
+      thumbnailUrl = uploadedThumb.Location;
+    }
 
     // ✅ Save to Firestore (test_videos)
     const videoDoc = {
-      filename: key,
-      s3_url: uploaded.Location,
+      filename: videoKey,
+      s3_url: uploadedVideo.Location,
+      thumbnail_url: thumbnailUrl, // ✅ added field
       title: title || "Untitled",
       description: description || "",
       uploadedBy: { userId, username },
       createdAt: new Date().toISOString(),
-      likesCount: 0, // ✅ Initialize total likes
-      likedBy: [], // ✅ Empty array to track which users liked
+      likesCount: 0,
+      likedBy: [],
     };
 
     const videoRef = await db.collection("test_videos").add(videoDoc);
 
-    // ✅ Add reference under user's document (for profile fetching)
+    // ✅ Add reference under user's document
     const userRef = db.collection("users").doc(userId);
     await userRef.set(
       {
         videos: FieldValue.arrayUnion({
           id: videoRef.id,
           title: title || "Untitled",
-          s3_url: uploaded.Location,
+          s3_url: uploadedVideo.Location,
+          thumbnail_url: thumbnailUrl, // ✅ include thumbnail in user doc too
           createdAt: new Date().toISOString(),
-          likesCount: 0, // ✅ also store for quick profile display
+          likesCount: 0,
         }),
       },
       { merge: true }
@@ -63,7 +87,8 @@ router.post("/", verifyToken, upload.single("video"), async (req, res) => {
       uploadedBy: username,
       title: title || "Untitled",
       description: description || "",
-      s3Url: uploaded.Location,
+      s3Url: uploadedVideo.Location,
+      thumbnailUrl,
       likesCount: 0,
     });
   } catch (err) {
