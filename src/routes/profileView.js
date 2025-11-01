@@ -20,6 +20,7 @@ router.get("/:userId/profile", async (req, res) => {
       return {
         id: doc.id,
         s3_url: data.s3_url,
+        thumbnail_url: data.thumbnail_url || data.thumbnail || null,
         title: data.title || "Untitled",
         description: data.description || "",
         explicit: data.explicit || false,
