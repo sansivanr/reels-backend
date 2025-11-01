@@ -31,6 +31,7 @@ router.get("/", async (req, res) => {
         s3_url: data.s3_url,
         title: data.title || "Untitled",
         description: data.description || "",
+        thumbnail_url: data.thumbnail_url || null,
         explicit: flagged,
         createdAt: data.createdAt,
         likesCount: data.likesCount || 0, // ✅ Like count added
