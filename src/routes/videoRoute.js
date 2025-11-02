@@ -12,6 +12,9 @@ router.get("/", async (req, res) => {
       .orderBy("createdAt", "desc")
       .get();
 
+    const userDoc = await db.collection("users").doc(data.uploadedBy.userId).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+
     const videos = snapshot.docs.map((doc) => {
       const data = doc.data();
       const frames = data.sightengine_result?.data?.frames || [];
@@ -38,7 +41,7 @@ router.get("/", async (req, res) => {
         uploadedBy: {
           userId: data.uploadedBy?.userId || "unknown",
           username: data.uploadedBy?.username || "unknown",
-          profileUrl: data.uploadedBy?.profileUrl || null, // ✅ added profile pic
+          profileUrl: userData.profileUrl || null, // ✅ added profile pic
         },
         thumbnail_url: data.thumbnail_url || null,
       };

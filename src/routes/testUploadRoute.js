@@ -89,8 +89,7 @@ const profileUrl = userDoc.exists ? userDoc.data().profileUrl || null : null;
     res.json({
       message: "Video uploaded successfully",
       videoId: videoRef.id,
-      uploadedBy: username,
-      profileUrl: profileUrl,
+      uploadedBy: {username,profileUrl},
       title: title || "Untitled",
       description: description || "",
       s3Url: uploadedVideo.Location,
