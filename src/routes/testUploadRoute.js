@@ -26,6 +26,11 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
     const userId = req.user.userId;
     const username = req.user.username;
 
+    // ✅ Fetch user profile URL (if any)
+const userDoc = await db.collection("users").doc(userId).get();
+const profileUrl = userDoc.exists ? userDoc.data().profileUrl || null : null;
+
+
     // ✅ Upload video to S3
     const videoKey = `test-videos/${Date.now()}_${videoFile.originalname || "upload.mp4"}`;
     const videoParams = {
@@ -57,7 +62,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
       thumbnail_url: thumbnailUrl, // ✅ added field
       title: title || "Untitled",
       description: description || "",
-      uploadedBy: { userId, username },
+      uploadedBy: { userId, username, profileUrl},
       createdAt: new Date().toISOString(),
       likesCount: 0,
       likedBy: [],
@@ -85,6 +90,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
       message: "Video uploaded successfully",
       videoId: videoRef.id,
       uploadedBy: username,
+      profileUrl: profileUrl,
       title: title || "Untitled",
       description: description || "",
       s3Url: uploadedVideo.Location,
