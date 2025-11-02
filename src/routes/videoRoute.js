@@ -12,40 +12,48 @@ router.get("/", async (req, res) => {
       .orderBy("createdAt", "desc")
       .get();
 
-    const userDoc = await db.collection("users").doc(data.uploadedBy.userId).get();
-    const userData = userDoc.exists ? userDoc.data() : {};
+    // ✅ Fetch user data dynamically for each video
+    const videos = await Promise.all(
+      snapshot.docs.map(async (doc) => {
+        const data = doc.data();
+        const frames = data.sightengine_result?.data?.frames || [];
 
-    const videos = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      const frames = data.sightengine_result?.data?.frames || [];
+        // Explicit content check
+        const flagged = frames.some(
+          (f) =>
+            (f.nudity?.raw ?? 0) > 0.5 ||
+            (f.violence?.prob ?? 0) > 0.5 ||
+            (f.offensive?.prob ?? 0) > 0.5 ||
+            (f.gore?.prob ?? 0) > 0.5 ||
+            (f["self-harm"]?.prob ?? 0) > 0.5 ||
+            (f.weapon?.prob ?? 0) > 0.5
+        );
 
-      // 🧠 Simple explicit content check
-      const flagged = frames.some((f) =>
-        (f.nudity?.raw ?? 0) > 0.5 ||
-        (f.violence?.prob ?? 0) > 0.5 ||
-        (f.offensive?.prob ?? 0) > 0.5 ||
-        (f.gore?.prob ?? 0) > 0.5 ||
-        (f["self-harm"]?.prob ?? 0) > 0.5 ||
-        (f.weapon?.prob ?? 0) > 0.5
-      );
+        // ✅ Fetch latest profile info for uploader
+        let userData = {};
+        if (data.uploadedBy?.userId) {
+          const userDoc = await db.collection("users").doc(data.uploadedBy.userId).get();
+          if (userDoc.exists) userData = userDoc.data();
+        }
 
-      return {
-        id: doc.id,
-        s3_url: data.s3_url,
-        title: data.title || "Untitled",
-        description: data.description || "",
-        explicit: flagged,
-        createdAt: data.createdAt,
-        likesCount: data.likesCount || 0, // ✅ Like count added
-        likedBy: data.likedBy || [],
-        uploadedBy: {
-          userId: data.uploadedBy?.userId || "unknown",
-          username: data.uploadedBy?.username || "unknown",
-          profileUrl: userData.profileUrl || null, // ✅ added profile pic
-        },
-        thumbnail_url: data.thumbnail_url || null,
-      };
-    });
+        return {
+          id: doc.id,
+          s3_url: data.s3_url,
+          title: data.title || "Untitled",
+          description: data.description || "",
+          explicit: flagged,
+          createdAt: data.createdAt,
+          likesCount: data.likesCount || 0,
+          likedBy: data.likedBy || [],
+          uploadedBy: {
+            userId: data.uploadedBy?.userId || "unknown",
+            username: userData.username || data.uploadedBy?.username || "unknown",
+            profileUrl: userData.profileUrl || null, // ✅ always up-to-date
+          },
+          thumbnail_url: data.thumbnail_url || null,
+        };
+      })
+    );
 
     res.json({ videos });
   } catch (err) {
