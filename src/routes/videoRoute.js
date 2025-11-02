@@ -31,7 +31,6 @@ router.get("/", async (req, res) => {
         s3_url: data.s3_url,
         title: data.title || "Untitled",
         description: data.description || "",
-        thumbnail_url: data.thumbnail_url || null,
         explicit: flagged,
         createdAt: data.createdAt,
         likesCount: data.likesCount || 0, // ✅ Like count added
@@ -39,7 +38,7 @@ router.get("/", async (req, res) => {
         uploadedBy: {
           userId: data.uploadedBy?.userId || "unknown",
           username: data.uploadedBy?.username || "unknown",
-          profilePic: data.uploadedBy?.profilePic || null, // ✅ added profile pic
+          profileUrl: data.uploadedBy?.profileUrl || null, // ✅ added profile pic
         },
         thumbnail_url: data.thumbnail_url || null,
       };

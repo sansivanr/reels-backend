@@ -29,7 +29,7 @@ router.get("/:userId/profile", async (req, res) => {
         likedBy: data.likedBy ? data.likedBy.length : 0, // optional backup
         uploadedBy: {
           username: data.uploadedBy?.username || "Unknown",
-          profilePic: data.uploadedBy?.profilePic || null,
+          profileUrl: data.uploadedBy?.profileUrl || null,
         },
       };
     });
@@ -40,7 +40,7 @@ router.get("/:userId/profile", async (req, res) => {
       const userData = userDoc.exists
         ? {
             username: userDoc.data().username,
-            profilePic: userDoc.data().profilePic || null,
+            profileUrl: userDoc.data().profileUrl || null,
           }
         : { username: "Unknown", profilePic: null };
 
