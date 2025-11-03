@@ -8,6 +8,15 @@ router.get("/:userId/profile", async (req, res) => {
   try {
     const { userId } = req.params;
 
+    // Fetch user info from "users" collection
+    const userDoc = await db.collection("users").doc(userId).get();
+    const userData = userDoc.exists
+      ? {
+          username: userDoc.data().username || "Unknown",
+          profileUrl: userDoc.data().profileUrl || null,
+        }
+      : { username: "Unknown", profileUrl: null };
+
     // Fetch all videos uploaded by this user
     const snapshot = await db
       .collection("test_videos")
@@ -25,31 +34,14 @@ router.get("/:userId/profile", async (req, res) => {
         description: data.description || "",
         explicit: data.explicit || false,
         createdAt: data.createdAt,
-        likesCount: data.likesCount || 0, // ✅ include like count
-        likedBy: data.likedBy ? data.likedBy.length : 0, // optional backup
-        uploadedBy: {
-          username: data.uploadedBy?.username || "Unknown",
-          profileUrl: data.uploadedBy?.profileUrl || null,
-        },
+        likesCount: data.likesCount || 0,
+        likedBy: data.likedBy ? data.likedBy.length : 0,
+        uploadedBy: userData, // ✅ use latest info from users collection
       };
     });
 
-    // If no videos found, still fetch user info
-    if (videos.length === 0) {
-      const userDoc = await db.collection("users").doc(userId).get();
-      const userData = userDoc.exists
-        ? {
-            username: userDoc.data().username,
-            profileUrl: userDoc.data().profileUrl || null,
-          }
-        : { username: "Unknown", profilePic: null };
-
-      return res.json({ user: userData, videos: [] });
-    }
-
-    // If videos exist, return uploader info from the first one
     return res.json({
-      user: videos[0].uploadedBy,
+      user: userData,
       videos,
     });
   } catch (err) {
