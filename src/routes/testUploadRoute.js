@@ -33,6 +33,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
       Key: videoKey,
       Body: videoFile.buffer,
       ContentType: videoFile.mimetype || "video/mp4",
+      CacheControl: "public, max-age=31536000, immutable",
     };
     const uploadedVideo = await s3.upload(videoParams).promise();
 
@@ -45,6 +46,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
         Key: thumbKey,
         Body: thumbFile.buffer,
         ContentType: thumbFile.mimetype || "image/jpeg",
+        CacheControl: "public, max-age=31536000, immutable",
       };
       const uploadedThumb = await s3.upload(thumbParams).promise();
       thumbnailUrl = uploadedThumb.Location;
