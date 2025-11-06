@@ -8,6 +8,8 @@ import { verifyToken } from "../middleware/verifyToken.js";
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 const FieldValue = admin.firestore.FieldValue;
+const cfDomain = process.env.CLOUDFRONT_URL; // e.g. "d123abcd.cloudfront.net"
+
 
 // ✅ Allow both video and optional thumbnail
 const uploadFields = upload.fields([
@@ -36,6 +38,8 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
       CacheControl: "public, max-age=31536000, immutable",
     };
     const uploadedVideo = await s3.upload(videoParams).promise();
+    const cloudfrontVideoUrl = `${cfDomain}/${videoKey}`;
+
 
     // ✅ Upload thumbnail (if provided)
     let thumbnailUrl = null;
@@ -56,6 +60,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
     const videoDoc = {
       filename: videoKey,
       s3_url: uploadedVideo.Location,
+      cdn_url: cloudfrontVideoUrl,     // ✅ CloudFront video URL
       thumbnail_url: thumbnailUrl, // ✅ added field
       title: title || "Untitled",
       description: description || "",
@@ -75,6 +80,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
           id: videoRef.id,
           title: title || "Untitled",
           s3_url: uploadedVideo.Location,
+          cdn_url: cloudfrontVideoUrl,     // ✅ CloudFront video URL
           thumbnail_url: thumbnailUrl, // ✅ include thumbnail in user doc too
           createdAt: new Date().toISOString(),
           likesCount: 0,
@@ -90,6 +96,7 @@ router.post("/", verifyToken, uploadFields, async (req, res) => {
       title: title || "Untitled",
       description: description || "",
       s3Url: uploadedVideo.Location,
+      cdn_url: cloudfrontVideoUrl,     // ✅ CloudFront video URL
       thumbnailUrl,
       likesCount: 0,
     });
