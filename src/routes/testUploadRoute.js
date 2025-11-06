@@ -4,6 +4,8 @@ import s3 from "../config/s3Config.js";
 import { db } from "../config/firebase.js";
 import admin from "firebase-admin"; // ✅ Required for FieldValue
 import { verifyToken } from "../middleware/verifyToken.js";
+import dotenv from "dotenv";
+dotenv.config();
 
 const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
